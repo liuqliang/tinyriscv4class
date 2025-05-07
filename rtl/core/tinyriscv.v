@@ -67,6 +67,7 @@ module tinyriscv(
     wire[`MemAddrBus] id_csr_waddr_o;
     wire[`MemAddrBus] id_op1_o;
     wire[`MemAddrBus] id_op2_o;
+    wire[`MemAddrBus] id_op3_o;
     wire[`MemAddrBus] id_op1_jump_o;
     wire[`MemAddrBus] id_op2_jump_o;
 
@@ -82,6 +83,7 @@ module tinyriscv(
     wire[`RegBus] ie_csr_rdata_o;
     wire[`MemAddrBus] ie_op1_o;
     wire[`MemAddrBus] ie_op2_o;
+    wire[`MemAddrBus] ie_op3_o;
     wire[`MemAddrBus] ie_op1_jump_o;
     wire[`MemAddrBus] ie_op2_jump_o;
 
@@ -240,6 +242,7 @@ module tinyriscv(
         .reg_waddr_o(id_reg_waddr_o),
         .op1_o(id_op1_o),
         .op2_o(id_op2_o),
+        .op3_o(id_op3_o),
         .op1_jump_o(id_op1_jump_o),
         .op2_jump_o(id_op2_jump_o),
         .csr_rdata_i(csr_data_o),
@@ -268,10 +271,12 @@ module tinyriscv(
         .reg2_rdata_o(ie_reg2_rdata_o),
         .op1_i(id_op1_o),
         .op2_i(id_op2_o),
+        .op3_i(id_op3_o),
         .op1_jump_i(id_op1_jump_o),
         .op2_jump_i(id_op2_jump_o),
         .op1_o(ie_op1_o),
         .op2_o(ie_op2_o),
+        .op3_o(ie_op3_o),
         .op1_jump_o(ie_op1_jump_o),
         .op2_jump_o(ie_op2_jump_o),
         .csr_we_i(id_csr_we_o),
@@ -293,6 +298,7 @@ module tinyriscv(
         .reg2_rdata_i(ie_reg2_rdata_o),
         .op1_i(ie_op1_o),
         .op2_i(ie_op2_o),
+        .op3_i(ie_op3_o),
         .op1_jump_i(ie_op1_jump_o),
         .op2_jump_i(ie_op2_jump_o),
         .mem_rdata_i(rib_ex_data_i),

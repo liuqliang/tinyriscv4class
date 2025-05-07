@@ -33,6 +33,7 @@ module id_ex(
     input wire[`RegBus] csr_rdata_i,        // CSR寄存器读数据
     input wire[`MemAddrBus] op1_i,
     input wire[`MemAddrBus] op2_i,
+    input wire[`MemAddrBus] op3_i,
     input wire[`MemAddrBus] op1_jump_i,
     input wire[`MemAddrBus] op2_jump_i,
 
@@ -40,6 +41,7 @@ module id_ex(
 
     output wire[`MemAddrBus] op1_o,
     output wire[`MemAddrBus] op2_o,
+    output wire[`MemAddrBus] op3_o,
     output wire[`MemAddrBus] op1_jump_o,
     output wire[`MemAddrBus] op2_jump_o,
     output wire[`InstBus] inst_o,            // 指令内容
@@ -99,6 +101,10 @@ module id_ex(
     wire[`MemAddrBus] op2;
     gen_pipe_dff #(32) op2_ff(clk, rst, hold_en, `ZeroWord, op2_i, op2);
     assign op2_o = op2;
+
+    wire[`MemAddrBus] op3;
+    gen_pipe_dff #(32) op3_ff(clk, rst, hold_en, `ZeroWord, op3_i, op3);
+    assign op3_o = op3;
 
     wire[`MemAddrBus] op1_jump;
     gen_pipe_dff #(32) op1_jump_ff(clk, rst, hold_en, `ZeroWord, op1_jump_i, op1_jump);

@@ -136,9 +136,11 @@
 `define INST_CSRRSI 3'b110
 `define INST_CSRRCI 3'b111
 
-//IF
-`define INST_IF     7'b0101111
-`define INST_IF_I   3'b010
+// extension inst
+`define INST_EXT    7'b0101111
+`define INST_SID    3'b000
+`define INST_RT     3'b001
+`define INST_IF     3'b010
 
 // CSR reg addr
 `define CSR_CYCLE   12'hc00

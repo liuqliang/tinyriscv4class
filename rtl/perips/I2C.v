@@ -34,13 +34,15 @@ module I2C (
     reg         i2c_operation;//0:write, 1:read
     reg         i2c_sda_in_temp;
     reg [31:0]  i2c_read_data;
+    wire        i2c_read_en;
 
     wire    [7:0]   i2c_sda_o_next;
     reg [3:0]   i2c_state_next;
     reg [3:0]   i2c_transfer_cnt_next;
 
-    assign  read_data = {32{write_addr==32'h070030000}} & i2c_read_data;
+    assign  read_data = {32{write_addr==32'h70030000}} & i2c_read_data;
     assign  i2c_compl = (i2c_state == i2c_stop & i2c_state_next == i2c_idle);
+    assign  i2c_read_en = we_i & write_data[10] & write_addr==32'h70010000;
 
     always @(posedge clk) begin
         if (~rst) begin
@@ -117,7 +119,7 @@ module I2C (
         case (i2c_state)
             i2c_idle: begin
                     i2c_sda_o = 1'b1;
-                    i2c_state_next = we_i?i2c_start:i2c_idle;
+                    i2c_state_next = (i2c_read_en | we_i & write_addr==32'h70020000)?i2c_start:i2c_idle;
                     i2c_transfer_cnt_next = 4'b0;
             end
             i2c_start: begin
