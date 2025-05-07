@@ -136,6 +136,10 @@
 `define INST_CSRRSI 3'b110
 `define INST_CSRRCI 3'b111
 
+//IF
+`define INST_IF     7'b0101111
+`define INST_IF_I   3'b010
+
 // CSR reg addr
 `define CSR_CYCLE   12'hc00
 `define CSR_CYCLEH  12'hc80

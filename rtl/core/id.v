@@ -46,6 +46,7 @@ module id(
     // to ex
     output reg[`MemAddrBus] op1_o,
     output reg[`MemAddrBus] op2_o,
+    output reg[`MemAddrBus] op3_o,     
     output reg[`MemAddrBus] op1_jump_o,
     output reg[`MemAddrBus] op2_jump_o,
     output reg[`InstBus] inst_o,             // 指令内容
@@ -288,6 +289,26 @@ module id(
                         reg2_raddr_o = `ZeroReg;
                         csr_we_o = `WriteDisable;
                     end
+                endcase
+            end
+            `INST_IF: begin
+                case(funct3):
+                `INST_IF_I: begin
+                    reg_we_o = `WriteEnable;
+                    reg_waddr_o = `ZeroReg;
+                    reg1_raddr_o = `ZeroReg;
+                    reg2_raddr_o = `ZeroReg;
+                    op1_o = inst_addr_i;
+                    op2_o = 32'h4;
+                    csr_raddr_o = {20'h0, inst_i[31:20]};
+
+                end
+                default: begin
+                    reg_we_o = `WriteDisable;
+                    reg_waddr_o = `ZeroReg;
+                    reg1_raddr_o = `ZeroReg;
+                    reg2_raddr_o = `ZeroReg;
+                end
                 endcase
             end
             default: begin
