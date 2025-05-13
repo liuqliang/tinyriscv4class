@@ -27,7 +27,9 @@ module uart(
 
     output reg[31:0] data_o,
 	output wire tx_pin,
-    input wire rx_pin
+    input wire rx_pin,
+    output reg SID_done,
+    input wire SID_start
 
     );
 

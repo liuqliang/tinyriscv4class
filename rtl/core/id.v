@@ -303,6 +303,18 @@ module id(
                     op2_o = reg2_rdata_i;
                     op3_o ={{20{inst_i[31]}}, inst_i[31:20]};
                 end
+                `INST_SID: begin
+                    reg_we_o = `WriteDisable;
+                    reg_waddr_o = `ZeroReg;
+                    reg1_raddr_o = `ZeroReg;
+                    reg2_raddr_o = `ZeroReg;
+                end
+                `INST_RT: begin
+                    reg_we_o = `WriteEnable;
+                    reg_waddr_o = rd;
+                    reg1_raddr_o = `ZeroReg;
+                    reg2_raddr_o = `ZeroReg;
+                end
                 default: begin
                     reg_we_o = `WriteDisable;
                     reg_waddr_o = `ZeroReg;
