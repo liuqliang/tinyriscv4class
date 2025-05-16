@@ -40,7 +40,9 @@ module tinyriscv(
     input wire jtag_halt_flag_i,               // jtag暂停标志
     input wire jtag_reset_flag_i,              // jtag复位PC标志
 
-    input wire[`INT_BUS] int_i                 // 中断信号
+    input wire[`INT_BUS] int_i,                 // 中断信号
+    input wire          uart_SID_compl,        // UARTID发送完成标志
+    input wire          i2c_compl,             // I2C读取完成标志
 
     );
 
@@ -329,7 +331,9 @@ module tinyriscv(
         .csr_rdata_i(ie_csr_rdata_o),
         .csr_wdata_o(ex_csr_wdata_o),
         .csr_we_o(ex_csr_we_o),
-        .csr_waddr_o(ex_csr_waddr_o)
+        .csr_waddr_o(ex_csr_waddr_o),
+        .uart_SID_compl(uart_SID_compl),
+        .i2c_compl(i2c_compl)
     );
 
     // div模块例化

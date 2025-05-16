@@ -28,8 +28,7 @@ module uart(
     output reg[31:0] data_o,
 	output wire tx_pin,
     input wire rx_pin,
-    output reg SID_done,
-    input wire SID_start
+    output reg SID_done
 
     );
 
@@ -68,6 +67,7 @@ module uart(
     localparam UART_BAUD = 8'h8;
     localparam UART_TXDATA = 8'hc;
     localparam UART_RXDATA = 8'h10;
+    localparam UART_SID = 8'h14;
 
     // addr: 0x00
     // rw. bit[0]: tx enable, 1 = enable, 0 = disable
@@ -90,6 +90,41 @@ module uart(
 
     assign tx_pin = tx_reg;
 
+    //SID
+    reg [3:0]   sid_state;
+    reg [3:0]   sid_state_next;
+    wire [7:0] data_SID;
+
+    always @(*) begin
+        case (sid_state)
+            4'b0000: sid_state_next = sid_state;
+            4'b0001: sid_state_next = tx_data_ready?4'b0010:sid_state;
+            4'b0010: sid_state_next = tx_data_ready?4'b0011:sid_state;
+            4'b0011: sid_state_next = tx_data_ready?4'b0100:sid_state;
+            4'b0100: sid_state_next = tx_data_ready?4'b0101:sid_state;
+            4'b0101: sid_state_next = tx_data_ready?4'b0110:sid_state;
+            4'b0110: sid_state_next = tx_data_ready?4'b0111:sid_state;
+            4'b0111: sid_state_next = tx_data_ready?4'b1000:sid_state;
+            4'b1000: sid_state_next = tx_data_ready?4'b1001:sid_state;
+            4'b1001: sid_state_next = tx_data_ready?4'b1010:sid_state;
+            4'b1010: sid_state_next = tx_data_ready?4'b0000:sid_state;
+            default: sid_state_next = sid_state;
+        endcase 
+    end
+
+    assign data_SID = {8{sid_state==4'b0000}} & 8'h0 |
+                      {8{sid_state==4'b0001}} & 8'h32 |
+                      {8{sid_state==4'b0010}} & 8'h30 |
+                      {8{sid_state==4'b0011}} & 8'h32 |
+                      {8{sid_state==4'b0100}} & 8'h34 |
+                      {8{sid_state==4'b0101}} & 8'h32 |
+                      {8{sid_state==4'b0110}} & 8'h31 |
+                      {8{sid_state==4'b0111}} & 8'h31 |
+                      {8{sid_state==4'b1000}} & 8'h30 |
+                      {8{sid_state==4'b1001}} & 8'h35 |
+                      {8{sid_state==4'b1010}} & 8'h33;
+
+    assign SID_done = (sid_state==4'b1010)& tx_data_ready? 1'b1 : 1'b0;
 
     // 写寄存器
     always @ (posedge clk) begin
@@ -99,7 +134,9 @@ module uart(
             uart_rx <= 32'h0;
             uart_baud <= BAUD_115200;
             tx_data_valid <= 1'b0;
-        end else begin
+            sid_state <= 4'b0000;
+        end 
+        else begin
             if (we_i == 1'b1) begin
                 case (addr_i[7:0])
                     UART_CTRL: begin
@@ -118,18 +155,38 @@ module uart(
                             tx_data_valid <= 1'b1;
                         end
                     end
+                    UART_SID: begin
+                        if (sid_state == 4'b0000) begin
+                            sid_state <= 4'b0001;
+                        end
+                    end
                 endcase
-            end else begin
-                tx_data_valid <= 1'b0;
-                if (tx_data_ready == 1'b1) begin
-                    uart_status[0] <= 1'b0;
-                end
+            end 
+            else begin
+                sid_state <= sid_state_next;
                 if (uart_ctrl[1] == 1'b1) begin
-                    if (rx_over == 1'b1) begin
-                        uart_status[1] <= 1'b1;
-                        uart_rx <= {24'h0, rx_data};
+                        if (rx_over == 1'b1) begin
+                            uart_status[1] <= 1'b1;
+                            uart_rx <= {24'h0, rx_data};
+                        end
+                    end
+                if(sid_state==4'b0000)  begin
+                    tx_data_valid <= 1'b0;
+                    if (tx_data_ready == 1'b1) begin
+                        uart_status[0] <= 1'b0;
                     end
                 end
+                else    begin
+                    if (tx_data_ready == 1'b1) begin
+                        uart_status[0] <= 1'b0;
+                        tx_data_valid <= 1'b0;
+                    end
+                    else if (uart_status[0] == 1'b0) begin
+                        tx_data_valid <= 1'b1;
+                        uart_status[0] <= 1'b1;
+                        tx_data <= data_SID;
+                    end  
+                end    
             end
         end
     end

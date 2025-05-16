@@ -118,7 +118,7 @@ module I2C (
     always @(*) begin
         case (i2c_state)
             i2c_idle: begin
-                    i2c_sda_o = 1'b1;
+                    i2c_sda_o = 1'bz;
                     i2c_state_next = (i2c_read_en | we_i & write_addr==32'h70020000)?i2c_start:i2c_idle;
                     i2c_transfer_cnt_next = 4'b0;
             end
@@ -134,7 +134,7 @@ module I2C (
                     i2c_transfer_cnt_next = 4'd9;
                 end
                 else begin
-                    i2c_sda_o = 1'b1;
+                    i2c_sda_o = 1'bz;
                     i2c_state_next = i2c_start;
                     i2c_transfer_cnt_next = 4'b0;
                 end
@@ -149,6 +149,9 @@ module I2C (
                                 i2c_addr[1] & i2c_transfer_cnt == 4'd3 |
                                 i2c_addr[0] & i2c_transfer_cnt == 4'd2 |
                                 i2c_operation & i2c_transfer_cnt == 4'd1;
+                end
+                else begin
+                    i2c_sda_o = 1'bz;
                 end
                 if (i2c_div_cnt == 8'd10) begin
                     i2c_transfer_cnt_next= (i2c_transfer_cnt==4'b0)?i2c_transfer_cnt - 1:4'b0;
@@ -251,7 +254,7 @@ module I2C (
                 end
             end
             i2c_stop: begin
-                    i2c_transfer_cnt_next = 4'd0;
+                i2c_transfer_cnt_next = 4'd0;
                 if (i2c_div_cnt >= 8'd138 & i2c_div_cnt < 8'd252) begin
                     i2c_sda_o = 1'b1;
                     i2c_state_next = i2c_stop;
@@ -266,8 +269,9 @@ module I2C (
                 end
             end
             default: begin // other states.
-                i2c_sda_o = 1'b1;
+                i2c_sda_o = 1'bz;
                 i2c_state_next = i2c_idle; // reset to idle state.
+                i2c_transfer_cnt_next = 4'b0;
             end
         endcase
     end

@@ -43,7 +43,9 @@ module tinyriscv_soc_top(
     output wire spi_ss,      // SPI SS引脚
     output wire spi_clk,      // SPI CLK引脚
 
-    output wire [3:0]   pwm_out     // PWM输出引脚
+    output wire [3:0]   pwm_out,     // PWM输出引脚
+    output wire i2c_scl,      // I2C SCL引脚
+    inout wire i2c_sda,    // I2C SDA引脚
 
     );
 
@@ -145,6 +147,14 @@ module tinyriscv_soc_top(
     wire[31:0] gpio_ctrl;
     wire[31:0] gpio_data;
 
+    //uart
+    wire uart_sid_done;
+
+    //i2c
+    wire i2c_sda_i;
+    wire i2c_sda_o;
+    wire i2c_compl;
+
     assign int_flag = {7'h0, timer0_int};
 
     // 低电平点亮LED
@@ -184,7 +194,9 @@ module tinyriscv_soc_top(
         .jtag_halt_flag_i(jtag_halt_req_o),
         .jtag_reset_flag_i(jtag_reset_req_o),
 
-        .int_i(int_flag)
+        .int_i(int_flag),
+        .uart_SID_compl(uart_sid_done),
+        .i2c_compl(i2c_compl)
     );
 
     // rom模块例化
@@ -227,7 +239,8 @@ module tinyriscv_soc_top(
         .data_i(s3_data_o),
         .data_o(s3_data_i),
         .tx_pin(uart_tx_pin),
-        .rx_pin(uart_rx_pin)
+        .rx_pin(uart_rx_pin),
+        .SID_done(uart_sid_done)
     );
 
     // io0
@@ -315,8 +328,24 @@ module tinyriscv_soc_top(
         .write_data(s6_data_o),
         .pwm_out(pwm_out)
     );
-    //I2C模块例化
 
+    //i2c io
+    assign i2c_sda_i = i2c_sda;
+    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻态
+
+    //I2C模块例化
+    i2c i2c_0(
+        .clk(clk),
+        .rst(rst),
+        .we_i(s7_we_o),
+        .write_addr(s7_addr_o),
+        .write_data(s7_data_o),
+        .read_data(s7_data_i),
+        .i2c_compl(i2c_compl),
+        .i2c_sda_i(i2c_sda_i),
+        .i2c_sda_o(i2c_sda_o),
+        .i2c_scl_o(i2c_scl)
+    );
 
     // rib模块例化
     rib u_rib(

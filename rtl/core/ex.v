@@ -42,6 +42,8 @@ module ex(
 
     // from mem
     input wire[`MemBus] mem_rdata_i,        // 内存输入数据
+    input wire          uart_SID_compl,    // UARTID发送完成标志
+    input wire          i2c_compl,        // I2C读取完成标志
 
     // from div
     input wire div_ready_i,                 // 除法运算完成标志
@@ -119,13 +121,17 @@ module ex(
     reg div_start;
     reg uart_busy_next;
     reg uart_busy_current;
+    reg [1:0]   RT_state;
+    reg [1:0]   RT_state_next;
 
     always @(posedge clk) begin
         if (~rst) begin
             uart_busy_current <= 1'b0;
+            RT_state <= 2'b00;
         end
         else begin
             uart_busy_current <= uart_busy_current?(~uart_SID_compl):uart_busy_next;
+            RT_state <= RT_state_next;
         end
     end
 
@@ -264,6 +270,7 @@ module ex(
         mem_req = `RIB_NREQ;
         csr_wdata_o = `ZeroWord;
         uart_busy_next = 1'b0;
+        RT_state_next = 2'b00;
 
         case (opcode)
             `INST_TYPE_I: begin
@@ -916,10 +923,11 @@ module ex(
                         hold_flag = `HoldDisable;
                         jump_addr = `ZeroWord;
                         mem_wdata_o = `ZeroWord;
-                        mem_raddr_o = `ZeroWord;
-                        mem_waddr_o = `ZeroWord;
-                        mem_we = `WriteDisable;
+                        mem_raddr_o = 32'h30000014;
+                        mem_waddr_o = 32'h30000014;
+                        mem_we = `WriteEnable;
                         reg_wdata = `ZeroWord;
+                        mem_req = `RIB_REQ;
                     end
                     `INST_RT: begin
                         case(RT_state)
@@ -933,6 +941,7 @@ module ex(
                                 mem_we = `WriteEnable;
                                 reg_wdata = `ZeroWord;
                                 mem_req = `RIB_REQ;
+                                RT_state_next = 2'b01;
                             end
                             2'b01: begin
                                 jump_flag = `JumpDisable;
@@ -943,6 +952,7 @@ module ex(
                                 mem_waddr_o = `ZeroWord;
                                 mem_we = `WriteDisable;
                                 reg_wdata = `ZeroWord;
+                                RT_state_next = i2c_compl?2'b10:2'b01;
                             end
                             2'b10: begin
                                 jump_flag = `JumpDisable;
@@ -954,9 +964,17 @@ module ex(
                                 mem_we = `WriteDisable;
                                 reg_wdata = mem_rdata_i;
                                 mem_req = `RIB_REQ;
+                                RT_state_next = 2'b00;
                             end
                             default: begin
-                                uart_busy_next = 1'b0;
+                                jump_flag = `JumpDisable;
+                                hold_flag = `HoldEnable;
+                                jump_addr = `ZeroWord;
+                                mem_wdata_o = `ZeroWord;
+                                mem_raddr_o = `ZeroWord;
+                                mem_waddr_o = `ZeroWord;
+                                mem_we = `WriteDisable;
+                                reg_wdata = `ZeroWord;
                             end
                         endcase
                     end
