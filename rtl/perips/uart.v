@@ -28,12 +28,12 @@ module uart(
     output reg[31:0] data_o,
 	output wire tx_pin,
     input wire rx_pin,
-    output reg SID_done
+    output wire SID_done
 
     );
 
 
-    // 50MHz时钟，波特率115200bps对应的分频系数
+    // 50MHz时钟，波特率115200bps对应的分频系�?
     localparam BAUD_115200 = 32'h1B8;
 
     localparam S_IDLE       = 4'b0001;
@@ -55,7 +55,7 @@ module uart(
     wire rx_negedge;
     reg rx_start;                      // RX使能
     reg[3:0] rx_clk_edge_cnt;          // clk时钟沿的个数
-    reg rx_clk_edge_level;             // clk沿电平
+    reg rx_clk_edge_level;             // clk沿电�?
     reg rx_done;
     reg[15:0] rx_clk_cnt;
     reg[15:0] rx_div_cnt;
@@ -216,7 +216,7 @@ module uart(
         end
     end
 
-    // *************************** TX发送 ****************************
+    // *************************** TX发�?? ****************************
 
     always @ (posedge clk) begin
         if (rst == 1'b0) begin
@@ -267,7 +267,7 @@ module uart(
 
     // *************************** RX接收 ****************************
 
-    // 下降沿检测(检测起始信号)
+    // 下降沿检�?(�?测起始信�?)
     assign rx_negedge = rx_q1 && ~rx_q0;
 
 
@@ -281,7 +281,7 @@ module uart(
         end
     end
 
-    // 开始接收数据信号，接收期间一直有效
+    // �?始接收数据信号，接收期间�?直有�?
     always @ (posedge clk) begin
         if (rst == 1'b0) begin
             rx_start <= 1'b0;
@@ -302,7 +302,7 @@ module uart(
         if (rst == 1'b0) begin
             rx_div_cnt <= 16'h0;
         end else begin
-            // 第一个时钟沿只需波特率分频系数的一半
+            // 第一个时钟沿只需波特率分频系数的�?�?
             if (rx_start == 1'b1 && rx_clk_edge_cnt == 4'h0) begin
                 rx_div_cnt <= {1'b0, uart_baud[15:1]};
             end else begin
@@ -311,12 +311,12 @@ module uart(
         end
     end
 
-    // 对时钟进行计数
+    // 对时钟进行计�?
     always @ (posedge clk) begin
         if (rst == 1'b0) begin
             rx_clk_cnt <= 16'h0;
         end else if (rx_start == 1'b1) begin
-            // 计数达到分频值
+            // 计数达到分频�?
             if (rx_clk_cnt == rx_div_cnt) begin
                 rx_clk_cnt <= 16'h0;
             end else begin
@@ -327,22 +327,22 @@ module uart(
         end
     end
 
-    // 每当时钟计数达到分频值时产生一个上升沿脉冲
+    // 每当时钟计数达到分频值时产生�?个上升沿脉冲
     always @ (posedge clk) begin
         if (rst == 1'b0) begin
             rx_clk_edge_cnt <= 4'h0;
             rx_clk_edge_level <= 1'b0;
         end else if (rx_start == 1'b1) begin
-            // 计数达到分频值
+            // 计数达到分频�?
             if (rx_clk_cnt == rx_div_cnt) begin
-                // 时钟沿个数达到最大值
+                // 时钟沿个数达到最大�??
                 if (rx_clk_edge_cnt == 4'd9) begin
                     rx_clk_edge_cnt <= 4'h0;
                     rx_clk_edge_level <= 1'b0;
                 end else begin
                     // 时钟沿个数加1
                     rx_clk_edge_cnt <= rx_clk_edge_cnt + 1'b1;
-                    // 产生上升沿脉冲
+                    // 产生上升沿脉�?
                     rx_clk_edge_level <= 1'b1;
                 end
             end else begin
@@ -361,17 +361,17 @@ module uart(
             rx_over <= 1'b0;
         end else begin
             if (rx_start == 1'b1) begin
-                // 上升沿
+                // 上升�?
                 if (rx_clk_edge_level == 1'b1) begin
                     case (rx_clk_edge_cnt)
-                        // 起始位
+                        // 起始�?
                         1: begin
 
                         end
-                        // 数据位
+                        // 数据�?
                         2, 3, 4, 5, 6, 7, 8, 9: begin
                             rx_data <= rx_data | (rx_pin << (rx_clk_edge_cnt - 2));
-                            // 最后一位接收完成，置位接收完成标志
+                            // �?后一位接收完成，置位接收完成标志
                             if (rx_clk_edge_cnt == 4'h9) begin
                                 rx_over <= 1'b1;
                             end

@@ -29,7 +29,7 @@ module tinyriscv_soc_top(
 
     input wire uart_debug_pin, // 串口下载使能引脚
 
-    output wire uart_tx_pin, // UART发送引脚
+    output wire uart_tx_pin, // UART发�?�引�?
     input wire uart_rx_pin,  // UART接收引脚
     inout wire[15:0] gpio,    // GPIO引脚
 
@@ -45,7 +45,7 @@ module tinyriscv_soc_top(
 
     output wire [3:0]   pwm_out,     // PWM输出引脚
     output wire i2c_scl,      // I2C SCL引脚
-    inout wire i2c_sda,    // I2C SDA引脚
+    inout wire i2c_sda    // I2C SDA引脚
 
     );
 
@@ -320,7 +320,7 @@ module tinyriscv_soc_top(
     );
 
     // pwm模块例化
-    pwm pwm_0(
+    PWM pwm_0(
         .clk(clk),
         .rst(rst),
         .we_i(s6_we_o),
@@ -331,10 +331,10 @@ module tinyriscv_soc_top(
 
     //i2c io
     assign i2c_sda_i = i2c_sda;
-    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻态
+    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻�?
 
     //I2C模块例化
-    i2c i2c_0(
+    I2C i2c_0(
         .clk(clk),
         .rst(rst),
         .we_i(s7_we_o),

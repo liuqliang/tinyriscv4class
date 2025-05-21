@@ -255,7 +255,9 @@ module uart_debug(
         end else begin
             case (state)
                 S_CRC_START: begin
-                    fw_file_size <= {rx_data[25], rx_data[26], rx_data[27], rx_data[28]};
+                    //for tb
+                    //fw_file_size <= {rx_data[25], rx_data[26], rx_data[27], rx_data[28]};
+                    fw_file_size <= {rx_data[29], rx_data[30], rx_data[31], rx_data[32]};
                 end
             endcase
         end
