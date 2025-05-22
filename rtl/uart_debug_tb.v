@@ -41,7 +41,7 @@ module uart_debug_tb;
   integer idx;
   initial begin
     // 读取数据文件
-    $readmemh("C:/Users/Humber/Projects/tinyriscv/CustomTest/Other_Example/PWM/PWM_inst.data", data_file);
+    $readmemh("D:/downloads/verification/Extend_Inst_Example/IF/IF_inst.data", data_file);
     data_file_size = 0;
     for(idx = 0; idx < 1024; idx = idx + 1) begin 
       if(data_file[idx] !== 32'hxxxx_xxxx) begin 
