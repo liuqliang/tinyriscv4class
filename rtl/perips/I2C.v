@@ -15,15 +15,15 @@ module I2C (
     localparam  i2c_freq = 400000; // 400KHz
     //localparam  i2c_div = clock_freq / i2c_freq; // 125
     localparam  i2c_div = 8'd125; // 124
-    localparam  i2c_idle = 3'd0,
-                i2c_start = 3'd1,
-                i2c_addr_compare = 3'd2,
-                i2c_addr_ack = 3'd3,
-                i2c_write = 3'd4,
-                i2c_write_ack = 3'd5,
-                i2c_read = 3'd6,
-                i2c_read_ack = 3'd7,
-                i2c_stop = 3'd8;
+    localparam  i2c_idle = 4'd0;
+    localparam  i2c_start = 4'd1;
+    localparam  i2c_addr_compare = 4'd2;
+    localparam  i2c_addr_ack = 4'd3;
+    localparam  i2c_write = 4'd4;
+    localparam  i2c_write_ack = 4'd5;
+    localparam  i2c_read = 4'd6;
+    localparam  i2c_read_ack = 4'd7;
+    localparam  i2c_stop = 4'd8;
 
     reg [6:0]   i2c_addr;
     reg [2:0]   i2c_byte_cnt;
@@ -40,9 +40,9 @@ module I2C (
     reg [3:0]   i2c_state_next;
     reg [3:0]   i2c_transfer_cnt_next;
 
-    assign  read_data = {32{write_addr==32'h70030000}} & i2c_read_data;
+    assign  read_data = {32{write_addr==32'h00030000}} & {{24'b0},i2c_read_data[14:7]};
     assign  i2c_compl = (i2c_state == i2c_stop & i2c_state_next == i2c_idle);
-    assign  i2c_read_en = we_i & write_data[10] & write_addr==32'h70010000;
+    assign  i2c_read_en = we_i & write_data[10] & write_addr==32'h00010000;
 
     always @(posedge clk) begin
         if (~rst) begin
@@ -95,7 +95,7 @@ module I2C (
             i2c_read_data[2] <= (i2c_state == i2c_read & i2c_div_cnt == 8'd192 & i2c_transfer_cnt == 4'd3 & i2c_byte_cnt==3'd1)?i2c_sda_i:i2c_read_data[2];
             i2c_read_data[1] <= (i2c_state == i2c_read & i2c_div_cnt == 8'd192 & i2c_transfer_cnt == 4'd2 & i2c_byte_cnt==3'd1)?i2c_sda_i:i2c_read_data[1];
             i2c_read_data[0] <= (i2c_state == i2c_read & i2c_div_cnt == 8'd192 & i2c_transfer_cnt == 4'd1 & i2c_byte_cnt==3'd1)?i2c_sda_i:i2c_read_data[0];
-            if (we_i & write_addr==32'h70010000) begin
+            if (we_i & write_addr==32'h00010000) begin
                 i2c_addr <= write_data[6:0];
                 i2c_byte_cnt <= write_data[9:7];
                 i2c_operation <= write_data[10];
@@ -105,7 +105,7 @@ module I2C (
                 i2c_byte_cnt <= (i2c_state==i2c_write & i2c_state_next==i2c_write_ack | i2c_state==i2c_read & i2c_state_next==i2c_read_ack)?i2c_byte_cnt-1:i2c_byte_cnt;
                 i2c_operation <= i2c_operation;
             end
-            if (we_i & write_addr==32'h70020000) begin
+            if (we_i & write_addr==32'h00020000) begin
                 i2c_data <= write_data;
             end
             else begin
@@ -119,7 +119,7 @@ module I2C (
         case (i2c_state)
             i2c_idle: begin
                     i2c_sda_o = 1'bz;
-                    i2c_state_next = (i2c_read_en | we_i & write_addr==32'h70020000)?i2c_start:i2c_idle;
+                    i2c_state_next = (i2c_read_en | we_i & write_addr==32'h00020000)?i2c_start:i2c_idle;
                     i2c_transfer_cnt_next = 4'b0;
             end
             i2c_start: begin
@@ -154,8 +154,8 @@ module I2C (
                     i2c_sda_o = 1'bz;
                 end
                 if (i2c_div_cnt == 8'd10) begin
-                    i2c_transfer_cnt_next= (i2c_transfer_cnt==4'b0)?i2c_transfer_cnt - 1:4'b0;
-                    i2c_state_next =( i2c_transfer_cnt==4'd0)?i2c_addr_ack:i2c_addr_compare;
+                    i2c_transfer_cnt_next= i2c_transfer_cnt-4'b1;
+                    i2c_state_next =( i2c_transfer_cnt==4'd1)?i2c_addr_ack:i2c_addr_compare;
                 end
                 else begin
                     i2c_transfer_cnt_next = i2c_transfer_cnt;
@@ -212,8 +212,8 @@ module I2C (
                     i2c_sda_o = 1'bz;
                 end
                 if (i2c_div_cnt == 8'd10) begin
-                    i2c_transfer_cnt_next= (i2c_transfer_cnt==4'b0)?i2c_transfer_cnt - 1:4'b0;
-                    i2c_state_next =(i2c_transfer_cnt==4'b0)?i2c_write_ack:i2c_write;
+                    i2c_transfer_cnt_next= i2c_transfer_cnt - 4'b0001;
+                    i2c_state_next =(i2c_transfer_cnt==4'b0001)?i2c_write_ack:i2c_write;
                 end
                 else begin
                     i2c_transfer_cnt_next = i2c_transfer_cnt;
@@ -234,8 +234,8 @@ module I2C (
             i2c_read: begin
                 i2c_sda_o = 1'bz;
                 if (i2c_div_cnt == 8'd10) begin
-                    i2c_transfer_cnt_next= (i2c_transfer_cnt==4'b0)?i2c_transfer_cnt - 1:4'b0;
-                    i2c_state_next =(i2c_transfer_cnt==4'b0)?i2c_read_ack:i2c_read;
+                    i2c_transfer_cnt_next= i2c_transfer_cnt - 4'b0001;
+                    i2c_state_next =(i2c_transfer_cnt==4'b0001)?i2c_read_ack:i2c_read;
                 end
                 else begin
                     i2c_transfer_cnt_next = i2c_transfer_cnt;
@@ -244,7 +244,7 @@ module I2C (
             end
             i2c_read_ack: begin
                 i2c_sda_o = 1'b0;
-                if (i2c_div_cnt == 8'd10) begin
+                if (i2c_div_cnt == 8'd0) begin
                         i2c_state_next = (i2c_byte_cnt==3'b0)? i2c_stop : i2c_read;
                         i2c_transfer_cnt_next = 4'd9;  
                 end
@@ -256,7 +256,7 @@ module I2C (
             i2c_stop: begin
                 i2c_transfer_cnt_next = 4'd0;
                 if (i2c_div_cnt >= 8'd138 & i2c_div_cnt < 8'd252) begin
-                    i2c_sda_o = 1'b1;
+                    i2c_sda_o = 1'bz;
                     i2c_state_next = i2c_stop;
                 end
                 else if (i2c_div_cnt == 8'd252) begin

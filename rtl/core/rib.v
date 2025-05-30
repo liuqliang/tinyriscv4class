@@ -129,7 +129,7 @@ module rib(
 
     // 仲裁逻辑
     // 固定优先级仲裁机制
-    // 优先级由高到低：主设备3，主设备0，主设备2，主设备1
+    // 优先级由高到低：主设备3uart，主设备0ex，主设备2jtag，主设备1pc
     always @ (*) begin
         if (req[3]) begin
             grant = grant3;

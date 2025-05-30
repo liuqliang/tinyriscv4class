@@ -123,15 +123,22 @@ module ex(
     reg uart_busy_current;
     reg [1:0]   RT_state;
     reg [1:0]   RT_state_next;
+    reg[`RegAddrBus] RT_reg_waddr;
+    reg[`InstAddrBus] RT_jump_addr;
+
 
     always @(posedge clk) begin
         if (~rst) begin
             uart_busy_current <= 1'b0;
             RT_state <= 2'b00;
+            RT_reg_waddr <= 5'b0;
+            RT_jump_addr <= `ZeroWord;
         end
         else begin
             uart_busy_current <= uart_busy_current?(~uart_SID_compl):uart_busy_next;
             RT_state <= RT_state_next;
+            RT_reg_waddr <= opcode==`INST_EXT&funct3==`INST_RT?reg_waddr_i:RT_reg_waddr;
+            RT_jump_addr <= opcode==`INST_EXT&funct3==`INST_RT?inst_addr_i+32'd4:RT_jump_addr;
         end
     end
 
@@ -271,8 +278,8 @@ module ex(
         csr_wdata_o = `ZeroWord;
         uart_busy_next = 1'b0;
         RT_state_next = 2'b00;
-
-        case (opcode)
+        if (RT_state==2'b0) begin
+            case (opcode)
             `INST_TYPE_I: begin
                 case (funct3)
                     `INST_ADDI: begin
@@ -930,53 +937,16 @@ module ex(
                         mem_req = `RIB_REQ;
                     end
                     `INST_RT: begin
-                        case(RT_state)
-                            2'b00: begin
-                                jump_flag = `JumpDisable;
-                                hold_flag = `HoldEnable;
-                                jump_addr = `ZeroWord;
-                                mem_wdata_o = 32'h70000348;
-                                mem_raddr_o = 32'h70010000;
-                                mem_waddr_o = 32'h70010000;
-                                mem_we = `WriteEnable;
-                                reg_wdata = `ZeroWord;
-                                mem_req = `RIB_REQ;
-                                RT_state_next = 2'b01;
-                            end
-                            2'b01: begin
-                                jump_flag = `JumpDisable;
-                                hold_flag = `HoldEnable;
-                                jump_addr = `ZeroWord;
-                                mem_wdata_o = `ZeroWord;
-                                mem_raddr_o = `ZeroWord;
-                                mem_waddr_o = `ZeroWord;
-                                mem_we = `WriteDisable;
-                                reg_wdata = `ZeroWord;
-                                RT_state_next = i2c_compl?2'b10:2'b01;
-                            end
-                            2'b10: begin
-                                jump_flag = `JumpDisable;
-                                hold_flag = `HoldDisable;
-                                jump_addr = `ZeroWord;
-                                mem_wdata_o = `ZeroWord;
-                                mem_raddr_o = 32'h70030000;
-                                mem_waddr_o = `ZeroWord;
-                                mem_we = `WriteDisable;
-                                reg_wdata = mem_rdata_i;
-                                mem_req = `RIB_REQ;
-                                RT_state_next = 2'b00;
-                            end
-                            default: begin
-                                jump_flag = `JumpDisable;
-                                hold_flag = `HoldEnable;
-                                jump_addr = `ZeroWord;
-                                mem_wdata_o = `ZeroWord;
-                                mem_raddr_o = `ZeroWord;
-                                mem_waddr_o = `ZeroWord;
-                                mem_we = `WriteDisable;
-                                reg_wdata = `ZeroWord;
-                            end
-                        endcase
+                        jump_flag = `JumpDisable;
+                        hold_flag = `HoldEnable;
+                        jump_addr = `ZeroWord;
+                        mem_wdata_o = 32'h70000548;
+                        mem_raddr_o = 32'h70010000;
+                        mem_waddr_o = 32'h70010000;
+                        mem_we = `WriteEnable;
+                        reg_wdata = `ZeroWord;
+                        mem_req = `RIB_REQ;
+                        RT_state_next = 2'b01;
                     end
                     default: begin
                         jump_flag = `JumpDisable;
@@ -1001,6 +971,46 @@ module ex(
                 reg_wdata = `ZeroWord;
             end
         endcase
+        end
+        else begin
+            case (RT_state)
+                2'b01: begin
+                    jump_flag = `JumpDisable;
+                    hold_flag = `HoldEnable;
+                    jump_addr = `ZeroWord;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = `ZeroWord;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = `ZeroWord;
+                    RT_state_next = i2c_compl?2'b10:2'b01;
+                end
+                2'b10: begin
+                    jump_flag = `JumpEnable;
+                    hold_flag = `HoldDisable;
+                    jump_addr = RT_jump_addr;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = 32'h70030000;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = mem_rdata_i;
+                    reg_we = `WriteEnable;
+                    reg_waddr = RT_reg_waddr;
+                    mem_req = `RIB_REQ;
+                    RT_state_next = 2'b00;
+                end
+                default: begin
+                    jump_flag = `JumpDisable;
+                    hold_flag = `HoldEnable;
+                    jump_addr = `ZeroWord;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = `ZeroWord;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = `ZeroWord;
+                end
+            endcase
+        end    
     end
 
 endmodule

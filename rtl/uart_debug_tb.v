@@ -6,18 +6,18 @@ module uart_debug_tb;
   always #1 clk = ~clk;
 
   // DUT UART 接口
-  wire tx;  // 可连接 DUT 输出
-  reg  rx = 1;  // 传输线空闲为高
+  wire tx;  // 可连�? DUT 输出
+  reg  rx = 1;  // 传输线空闲为�?
   reg uart_debug_en = 1;
   wire i2c_scl;
   wire i2c_sda;
 
-  // 初始化 DUT 实例（请根据你的DUT命名调整端口）
+  // 初始�? DUT 实例（请根据你的DUT命名调整端口�?
   tinyriscv_soc_top tinyriscv_soc_top_0 (
       .clk(clk),
       .rst(rst_n),
       .uart_debug_pin(uart_debug_en),
-      .uart_tx_pin(tx),  // UART发送引脚
+      .uart_tx_pin(tx),  // UART发�?�引�?
       .uart_rx_pin(rx),  // UART接收引脚
       .i2c_scl(i2c_scl),
       .i2c_sda(i2c_sda)
@@ -35,13 +35,13 @@ module uart_debug_tb;
   reg [15:0] crc_result;
   reg [7:0] temp_8bit;
 
-  // 计算每bit持续的时间（以50MHz为例，1 bit = 8680ns ≈ 434 cycles）
+  // 计算每bit持续的时间（�?50MHz为例�?1 bit = 8680ns �? 434 cycles�?
   localparam BIT_TIME = 16;
 
   integer idx;
   initial begin
     // 读取数据文件
-    $readmemh("D:/downloads/verification/Extend_Inst_Example/IF/IF_inst.data", data_file);
+    $readmemh("D:/downloads/verification/Extend_Inst_Example/Temp/Temp.data", data_file);
     data_file_size = 0;
     for(idx = 0; idx < 1024; idx = idx + 1) begin 
       if(data_file[idx] !== 32'hxxxx_xxxx) begin 
@@ -69,11 +69,11 @@ module uart_debug_tb;
     // 复位
     rst_n = 0;
     #10;
-    @(negedge clk) rst_n = 1; // 等待DUT准备好
+    @(negedge clk) rst_n = 1; // 等待DUT准备�?
     #10;
     @(negedge clk);
 
-    // 发送所有字节
+    // 发�?�所有字�?
     for(idx = 0; idx < (data_file_size + 31) / 32 + 1; idx = idx + 1) begin
       for (i = 0; i < 35; i = i + 1) begin
         @(negedge clk);
@@ -116,18 +116,91 @@ module uart_debug_tb;
       //     $display("%d", temp_8bit);
       //   end
       // end
-      #10000 $finish;
+      #20000 $finish;
     join
   end
 
-  // UART 发送任务：起始位 + 数据位 + 停止位
+   reg  [7:0]  temp_value = 8'b10110101;  // Ĭϲ¶ֵɸҪ޸ģ
+    reg         dev_ack = 1;         // ӻǷACK
+    reg  [7:0]  received_addr;     // ?????????
+    reg  [2:0]  bit_counter = 0;   // ????
+    reg         start_detected = 0;// START??????
+    reg         in_transaction = 0;// ????????
+    
+    // ??START???SCL??SDA????
+    
+    always @(negedge i2c_sda ) begin
+        if (i2c_scl && !in_transaction&&(uart_debug_en==0)) begin
+            start_detected <= 1;
+            in_transaction <= 1;
+            bit_counter <= 0;
+            received_addr <= 8'h00;
+            
+            // ????????
+            fork
+                begin
+                    // ??????
+                    repeat(8) begin
+                        @(posedge i2c_scl);    // ?SCL?????
+                        #1;                   // ??????????
+                        received_addr[7-bit_counter] = i2c_sda;
+                        bit_counter <= bit_counter + 1;
+                    end
+                    
+                    // ??ACK??
+                    @(negedge i2c_scl);        // ?SCL???????
+                    if (received_addr[7:1] == 7'h48) begin  // ??????0x48
+                                       
+                        dev_ack = 1'b0; 
+                        #1;
+                        // ??????????????????
+                        send_byte(temp_value);  // ???????[???+0]
+                        
+                        // ???????
+                       
+                        send_byte(temp_value);//
+                    end
+                    in_transaction <= 0;
+                end
+            join
+        end
+    end
+
+    // ??STOP???SCL??SDA????
+    always @(posedge i2c_sda) begin
+        if (i2c_scl) begin
+            start_detected <= 0;
+            in_transaction <= 0;
+            dev_ack<=1;
+        end
+    end
+
+    //---- ?????? ----
+    task send_byte(input [7:0] data);
+        reg [2:0] cnt;
+        begin
+            for (cnt=0; cnt<8; cnt=cnt+1) begin
+                @(negedge i2c_scl);    // ?SCL????????
+                #10;                  // ????
+                force i2c_sda = data[7-cnt];  // ??????MSB first?
+            end
+            // ?????????ACK
+            @(negedge i2c_scl);
+            #10 release i2c_sda;
+        end
+    endtask
+    
+    //---- ???????? ----
+    assign i2c_sda = (dev_ack) ? 1'bz : 1'b0;  // ACK??
+
+  // UART 发�?�任务：起始�? + 数据�? + 停止�?
   task uart_send_byte(input [7:0] data);
     integer j;
     begin
       rx = 0; // 起始位（低电平）
       #(BIT_TIME);
 
-      // 数据位（低位先传）
+      // 数据位（低位先传�?
       for (j = 0; j < 8; j = j + 1) begin
         rx = data[j];
         #(BIT_TIME);
@@ -148,16 +221,16 @@ module uart_debug_tb;
       end
       if(tx) begin
         $display("uart_debug: ERROR: RX timeout");
-        $stop(); // 等待起始位超时
+        $stop(); // 等待起始位超�?
       end
 
-      #(BIT_TIME / 2); // 等待半个比特时间，确保数据稳定
-      #(BIT_TIME);     // 跳过起始位
-      for (j = 0; j < 8; j = j + 1) begin // 接收数据位（低位先接）
+      #(BIT_TIME / 2); // 等待半个比特时间，确保数据稳�?
+      #(BIT_TIME);     // 跳过起始�?
+      for (j = 0; j < 8; j = j + 1) begin // 接收数据位（低位先接�?
         data[j] = tx;
         #(BIT_TIME);
       end
-      #(BIT_TIME/2); // 等待停止位结束
+      #(BIT_TIME/2); // 等待停止位结�?
     end
   endtask
 
@@ -169,7 +242,7 @@ module uart_debug_tb;
   end
 
   function [15:0] crc16_modbus;
-    input [4095:0] data;  // 最多 512 字节的数据（4096 位）
+    input [4095:0] data;  // �?�? 512 字节的数据（4096 位）
     input integer byte_count;  // 实际使用的数据字节数
 
     reg [15:0] crc;
@@ -178,10 +251,10 @@ module uart_debug_tb;
     begin
       crc = 16'hFFFF;
       for (i = 0; i < byte_count; i = i + 1) begin
-        curr_byte = data[i*8+:8];  // 提取当前字节，低位在前
+        curr_byte = data[i*8+:8];  // 提取当前字节，低位在�?
         crc = crc ^ curr_byte;
         for (j = 0; j < 8; j = j + 1) begin
-          if (crc[0]) crc = (crc >> 1) ^ 16'hA001;  // 多项式反转形式（Modbus标准）
+          if (crc[0]) crc = (crc >> 1) ^ 16'hA001;  // 多项式反转形式（Modbus标准�?
           else crc = crc >> 1;
         end
       end

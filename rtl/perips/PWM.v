@@ -28,15 +28,15 @@ module PWM (
             C <= `ZeroWord;
         end 
         else if (we_i) begin
-            A0 <= write_data & {32{write_addr == 32'h60000000}};
-            A1 <= write_data & {32{write_addr == 32'h60010000}};
-            A2 <= write_data & {32{write_addr == 32'h60020000}};
-            A3 <= write_data & {32{write_addr == 32'h60030000}};
-            B0 <= write_data & {32{write_addr == 32'h60100000}};
-            B1 <= write_data & {32{write_addr == 32'h60110000}};
-            B2 <= write_data & {32{write_addr == 32'h60120000}};
-            B3 <= write_data & {32{write_addr == 32'h60130000}};
-            C <=  write_data & {32{write_addr == 32'h60040000}};
+            A0 <= (write_addr == 32'h00000000)?write_data:A0;
+            A1 <= (write_addr == 32'h00010000)?write_data:A1;
+            A2 <= (write_addr == 32'h00020000)?write_data:A2;
+            A3 <= (write_addr == 32'h00030000)?write_data:A3;
+            B0 <= (write_addr == 32'h00100000)?write_data:B0;
+            B1 <= (write_addr == 32'h00110000)?write_data:B1;
+            B2 <= (write_addr == 32'h00120000)?write_data:B2;
+            B3 <= (write_addr == 32'h00130000)?write_data:B3;
+            C <=  (write_addr == 32'h00040000)?write_data:C;
         end
     end
 
@@ -48,18 +48,18 @@ module PWM (
             counter3 <= 32'b0;
         end 
         else begin
-            counter0 <= C[0] | counter0_next==A0 ? counter0_next:32'b0;
-            counter1 <= C[1] | counter1_next==A1 ? counter1_next:32'b0;
-            counter2 <= C[2] | counter2_next==A2 ? counter2_next:32'b0;
-            counter3 <= C[3] | counter3_next==A3 ? counter3_next:32'b0;
+            counter0 <= counter0_next;
+            counter1 <= counter1_next;
+            counter2 <= counter2_next;
+            counter3 <= counter3_next;
             
         end
     end
-    assign  counter0_next = counter0 + 32'b1;
-    assign  counter1_next = counter1 + 32'b1;
-    assign  counter2_next = counter2 + 32'b1;
-    assign  counter3_next = counter3 + 32'b1;
-    
+    assign  counter0_next = counter0==A0 ?32'b0:counter0 + 32'b1;
+    assign  counter1_next = counter1==A1 ?32'b0:counter1 + 32'b1;
+    assign  counter2_next = counter2==A2 ?32'b0:counter2 + 32'b1;
+    assign  counter3_next = counter3==A3 ?32'b0:counter3 + 32'b1;
+
     assign pwm_out[0] = C[0] & (counter0 < B0) ? 1'b1 : 1'b0;
     assign pwm_out[1] = C[1] & (counter1 < B1) ? 1'b1 : 1'b0;
     assign pwm_out[2] = C[2] & (counter2 < B2) ? 1'b1 : 1'b0;

@@ -16,7 +16,8 @@
 
 
 // clk = 50MHz时对应的波特率分频系数
-`define UART_BAUD_115200        32'h7
+`define UART_BAUD_115200        32'h1B8
+//`define UART_BAUD_115200        32'h7
 
 // 串口寄存器地址
 `define UART_CTRL_REG           32'h30000000
@@ -169,7 +170,7 @@ module uart_debug(
                 S_CRC_END: begin
                     if (crc_result == {rx_data[need_to_rec_bytes - 1], rx_data[need_to_rec_bytes - 2]}) begin
                         if (need_to_rec_bytes == `UART_FIRST_PACKET_LEN && remain_packet_count == 16'h0) begin
-                            remain_packet_count <= {7'h0, fw_file_size[31:7]} + 1'b1;
+                            remain_packet_count <= {5'h0, fw_file_size[31:5]} +((|fw_file_size[4:0])?1'b1:1'b0);
                             state <= S_SEND_ACK;
                         end else begin
                             remain_packet_count <= remain_packet_count - 1'b1;
@@ -256,8 +257,8 @@ module uart_debug(
             case (state)
                 S_CRC_START: begin
                     //for tb
-                    //fw_file_size <= {rx_data[25], rx_data[26], rx_data[27], rx_data[28]};
-                    fw_file_size <= {rx_data[29], rx_data[30], rx_data[31], rx_data[32]};
+                    fw_file_size <= {rx_data[25], rx_data[26], rx_data[27], rx_data[28]};
+                    //fw_file_size <= {rx_data[29], rx_data[30], rx_data[31], rx_data[32]};
                 end
             endcase
         end
