@@ -22,25 +22,27 @@ module tinyriscv(
     input wire clk,
     input wire rst,
 
-    output wire[`MemAddrBus] rib_ex_addr_o,    // 读、写外设的地址
+    output wire[`MemAddrBus] rib_ex_addr_o,    // 读�?�写外设的地�?
     input wire[`MemBus] rib_ex_data_i,         // 从外设读取的数据
-    output wire[`MemBus] rib_ex_data_o,        // 写入外设的数据
+    output wire[`MemBus] rib_ex_data_o,        // 写入外设的数�?
     output wire rib_ex_req_o,                  // 访问外设请求
-    output wire rib_ex_we_o,                   // 写外设标志
+    output wire rib_ex_we_o,                   // 写外设标�?
 
     output wire[`MemAddrBus] rib_pc_addr_o,    // 取指地址
-    input wire[`MemBus] rib_pc_data_i,         // 取到的指令内容
+    input wire[`MemBus] rib_pc_data_i,         // 取到的指令内�?
 
-    input wire[`RegAddrBus] jtag_reg_addr_i,   // jtag模块读、写寄存器的地址
+    input wire[`RegAddrBus] jtag_reg_addr_i,   // jtag模块读�?�写寄存器的地址
     input wire[`RegBus] jtag_reg_data_i,       // jtag模块写寄存器数据
     input wire jtag_reg_we_i,                  // jtag模块写寄存器标志
-    output wire[`RegBus] jtag_reg_data_o,      // jtag模块读取到的寄存器数据
+    output wire[`RegBus] jtag_reg_data_o,      // jtag模块读取到的寄存器数�?
 
     input wire rib_hold_flag_i,                // 总线暂停标志
     input wire jtag_halt_flag_i,               // jtag暂停标志
     input wire jtag_reset_flag_i,              // jtag复位PC标志
 
-    input wire[`INT_BUS] int_i                 // 中断信号
+    input wire[`INT_BUS] int_i,                 // 中断信号
+    input wire          uart_SID_compl,        // UARTID发�?�完成标�?
+    input wire          i2c_compl             // I2C读取完成标志
 
     );
 
@@ -67,6 +69,7 @@ module tinyriscv(
     wire[`MemAddrBus] id_csr_waddr_o;
     wire[`MemAddrBus] id_op1_o;
     wire[`MemAddrBus] id_op2_o;
+    wire[`MemAddrBus] id_op3_o;
     wire[`MemAddrBus] id_op1_jump_o;
     wire[`MemAddrBus] id_op2_jump_o;
 
@@ -82,6 +85,7 @@ module tinyriscv(
     wire[`RegBus] ie_csr_rdata_o;
     wire[`MemAddrBus] ie_op1_o;
     wire[`MemAddrBus] ie_op2_o;
+    wire[`MemAddrBus] ie_op3_o;
     wire[`MemAddrBus] ie_op1_jump_o;
     wire[`MemAddrBus] ie_op2_jump_o;
 
@@ -240,6 +244,7 @@ module tinyriscv(
         .reg_waddr_o(id_reg_waddr_o),
         .op1_o(id_op1_o),
         .op2_o(id_op2_o),
+        .op3_o(id_op3_o),
         .op1_jump_o(id_op1_jump_o),
         .op2_jump_o(id_op2_jump_o),
         .csr_rdata_i(csr_data_o),
@@ -268,10 +273,12 @@ module tinyriscv(
         .reg2_rdata_o(ie_reg2_rdata_o),
         .op1_i(id_op1_o),
         .op2_i(id_op2_o),
+        .op3_i(id_op3_o),
         .op1_jump_i(id_op1_jump_o),
         .op2_jump_i(id_op2_jump_o),
         .op1_o(ie_op1_o),
         .op2_o(ie_op2_o),
+        .op3_o(ie_op3_o),
         .op1_jump_o(ie_op1_jump_o),
         .op2_jump_o(ie_op2_jump_o),
         .csr_we_i(id_csr_we_o),
@@ -284,6 +291,7 @@ module tinyriscv(
 
     // ex模块例化
     ex u_ex(
+        .clk(clk),
         .rst(rst),
         .inst_i(ie_inst_o),
         .inst_addr_i(ie_inst_addr_o),
@@ -293,6 +301,7 @@ module tinyriscv(
         .reg2_rdata_i(ie_reg2_rdata_o),
         .op1_i(ie_op1_o),
         .op2_i(ie_op2_o),
+        .op3_i(ie_op3_o),
         .op1_jump_i(ie_op1_jump_o),
         .op2_jump_i(ie_op2_jump_o),
         .mem_rdata_i(rib_ex_data_i),
@@ -323,7 +332,9 @@ module tinyriscv(
         .csr_rdata_i(ie_csr_rdata_o),
         .csr_wdata_o(ex_csr_wdata_o),
         .csr_we_o(ex_csr_we_o),
-        .csr_waddr_o(ex_csr_waddr_o)
+        .csr_waddr_o(ex_csr_waddr_o),
+        .uart_SID_compl(uart_SID_compl),
+        .i2c_compl(i2c_compl)
     );
 
     // div模块例化

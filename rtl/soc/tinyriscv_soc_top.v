@@ -22,29 +22,35 @@ module tinyriscv_soc_top(
     input wire clk,
     input wire rst,
 
-    output reg over,         // 测试是否完成信号
+    //output reg over,         // 测试是否完成信号
     output reg succ,         // 测试是否成功信号
 
-    output wire halted_ind,  // jtag是否已经halt住CPU信号
+    //output wire halted_ind,  // jtag是否已经halt住CPU信号
 
     input wire uart_debug_pin, // 串口下载使能引脚
 
-    output wire uart_tx_pin, // UART发送引脚
+    output wire uart_tx_pin, // UART发�?�引�?
     input wire uart_rx_pin,  // UART接收引脚
-    inout wire[1:0] gpio,    // GPIO引脚
+    inout wire[15:0] gpio,    // GPIO引脚
 
-    input wire jtag_TCK,     // JTAG TCK引脚
-    input wire jtag_TMS,     // JTAG TMS引脚
-    input wire jtag_TDI,     // JTAG TDI引脚
-    output wire jtag_TDO,    // JTAG TDO引脚
+    //input wire jtag_TCK,     // JTAG TCK引脚
+    //input wire jtag_TMS,     // JTAG TMS引脚
+    //input wire jtag_TDI,     // JTAG TDI引脚
+    //output wire jtag_TDO,    // JTAG TDO引脚
 
-    input wire spi_miso,     // SPI MISO引脚
-    output wire spi_mosi,    // SPI MOSI引脚
-    output wire spi_ss,      // SPI SS引脚
-    output wire spi_clk      // SPI CLK引脚
+    //input wire spi_miso,     // SPI MISO引脚
+    //output wire spi_mosi,    // SPI MOSI引脚
+    //output wire spi_ss,      // SPI SS引脚
+    //output wire spi_clk,      // SPI CLK引脚
+
+    output wire [2:0]   pwm_out,     // PWM输出引脚
+    output wire i2c_scl,      // I2C SCL引脚
+    inout wire i2c_sda    // I2C SDA引脚
 
     );
-
+    reg over;
+    wire halted_ind;
+    wire pwm_out4; // PWM输出引脚
 
     // master 0 interface
     wire[`MemAddrBus] m0_addr_i;
@@ -110,6 +116,17 @@ module tinyriscv_soc_top(
     wire[`MemBus] s5_data_i;
     wire s5_we_o;
 
+    // slave 6 interface
+    wire[`MemAddrBus] s6_addr_o;
+    wire[`MemBus] s6_data_o;
+    wire s6_we_o;
+
+    // slave 7 interface
+    wire[`MemAddrBus] s7_addr_o;
+    wire[`MemBus] s7_data_o;
+    wire[`MemBus] s7_data_i;
+    wire s7_we_o;
+
     // rib
     wire rib_hold_flag_o;
 
@@ -128,9 +145,17 @@ module tinyriscv_soc_top(
     wire timer0_int;
 
     // gpio
-    wire[1:0] io_in;
+    wire[15:0] io_in;
     wire[31:0] gpio_ctrl;
     wire[31:0] gpio_data;
+
+    //uart
+    wire uart_sid_done;
+
+    //i2c
+    wire i2c_sda_i;
+    wire i2c_sda_o;
+    wire i2c_compl;
 
     assign int_flag = {7'h0, timer0_int};
 
@@ -171,7 +196,9 @@ module tinyriscv_soc_top(
         .jtag_halt_flag_i(jtag_halt_req_o),
         .jtag_reset_flag_i(jtag_reset_req_o),
 
-        .int_i(int_flag)
+        .int_i(int_flag),
+        .uart_SID_compl(uart_sid_done),
+        .i2c_compl(i2c_compl)
     );
 
     // rom模块例化
@@ -214,7 +241,8 @@ module tinyriscv_soc_top(
         .data_i(s3_data_o),
         .data_o(s3_data_i),
         .tx_pin(uart_tx_pin),
-        .rx_pin(uart_rx_pin)
+        .rx_pin(uart_rx_pin),
+        .SID_done(uart_sid_done)
     );
 
     // io0
@@ -223,6 +251,48 @@ module tinyriscv_soc_top(
     // io1
     assign gpio[1] = (gpio_ctrl[3:2] == 2'b01)? gpio_data[1]: 1'bz;
     assign io_in[1] = gpio[1];
+    // io2
+    assign gpio[2] = (gpio_ctrl[5:4] == 2'b01)? gpio_data[2]: 1'bz;
+    assign io_in[2] = gpio[2];
+    // io3
+    assign gpio[3] = (gpio_ctrl[7:6] == 2'b01)? gpio_data[3]: 1'bz;
+    assign io_in[3] = gpio[3];
+    // io4
+    assign gpio[4] = (gpio_ctrl[9:8] == 2'b01)? gpio_data[4]: 1'bz;
+    assign io_in[4] = gpio[4];
+    // io5
+    assign gpio[5] = (gpio_ctrl[11:10] == 2'b01)? gpio_data[5]: 1'bz;
+    assign io_in[5] = gpio[5];
+    // io6
+    assign gpio[6] = (gpio_ctrl[13:12] == 2'b01)? gpio_data[6]: 1'bz;
+    assign io_in[6] = gpio[6];
+    // io7
+    assign gpio[7] = (gpio_ctrl[15:14] == 2'b01)? gpio_data[7]: 1'bz;
+    assign io_in[7] = gpio[7];
+    // io8
+    assign gpio[8] = (gpio_ctrl[17:16] == 2'b01)? gpio_data[8]: 1'bz;
+    assign io_in[8] = gpio[8];
+    // io9
+    assign gpio[9] = (gpio_ctrl[19:18] == 2'b01)? gpio_data[9]: 1'bz;
+    assign io_in[9] = gpio[9];
+    // io10
+    assign gpio[10] = (gpio_ctrl[21:20] == 2'b01)? gpio_data[10]: 1'bz;
+    assign io_in[10] = gpio[10];
+    // io11
+    assign gpio[11] = (gpio_ctrl[23:22] == 2'b01)? gpio_data[11]: 1'bz;
+    assign io_in[11] = gpio[11];
+    // io12
+    assign gpio[12] = (gpio_ctrl[25:24] == 2'b01)? gpio_data[12]: 1'bz;
+    assign io_in[12] = gpio[12];
+    // io13
+    assign gpio[13] = (gpio_ctrl[27:26] == 2'b01)? gpio_data[13]: 1'bz;
+    assign io_in[13] = gpio[13];
+    // io14
+    assign gpio[14] = (gpio_ctrl[29:28] == 2'b01)? gpio_data[14]: 1'bz;
+    assign io_in[14] = gpio[14];
+    // io15
+    assign gpio[15] = (gpio_ctrl[31:30] == 2'b01)? gpio_data[15]: 1'bz;
+    assign io_in[15] = gpio[15];
 
     // gpio模块例化
     gpio gpio_0(
@@ -238,6 +308,7 @@ module tinyriscv_soc_top(
     );
 
     // spi模块例化
+    /*
     spi spi_0(
         .clk(clk),
         .rst(rst),
@@ -249,6 +320,36 @@ module tinyriscv_soc_top(
         .spi_miso(spi_miso),
         .spi_ss(spi_ss),
         .spi_clk(spi_clk)
+    );
+    */
+    assign s5_data_i = 32'b0; // spi不用
+
+    // pwm模块例化
+    PWM pwm_0(
+        .clk(clk),
+        .rst(rst),
+        .we_i(s6_we_o),
+        .write_addr(s6_addr_o),
+        .write_data(s6_data_o),
+        .pwm_out({pwm_out4,pwm_out})
+    );
+
+    //i2c io
+    assign i2c_sda_i = i2c_sda;
+    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻�?
+
+    //I2C模块例化
+    I2C i2c_0(
+        .clk(clk),
+        .rst(rst),
+        .we_i(s7_we_o),
+        .write_addr(s7_addr_o),
+        .write_data(s7_data_o),
+        .read_data(s7_data_i),
+        .i2c_compl(i2c_compl),
+        .i2c_sda_i(i2c_sda_i),
+        .i2c_sda_o(i2c_sda_o),
+        .i2c_scl_o(i2c_scl)
     );
 
     // rib模块例化
@@ -320,6 +421,18 @@ module tinyriscv_soc_top(
         .s5_data_i(s5_data_i),
         .s5_we_o(s5_we_o),
 
+        // slave 6 interface
+        .s6_addr_o(s6_addr_o),
+        .s6_data_o(s6_data_o),
+        .s6_data_i(32'b0),
+        .s6_we_o(s6_we_o),
+
+        // slave 7 interface
+        .s7_addr_o(s7_addr_o),
+        .s7_data_o(s7_data_o),
+        .s7_data_i(s7_data_i),
+        .s7_we_o(s7_we_o),
+
         .hold_flag_o(rib_hold_flag_o)
     );
 
@@ -336,6 +449,7 @@ module tinyriscv_soc_top(
     );
 
     // jtag模块例化
+    /*
     jtag_top #(
         .DMI_ADDR_BITS(6),
         .DMI_DATA_BITS(32),
@@ -359,5 +473,15 @@ module tinyriscv_soc_top(
         .halt_req_o(jtag_halt_req_o),
         .reset_req_o(jtag_reset_req_o)
     );
+    */
+    assign jtag_reg_we_o = 1'b0; // jtag不用
+    assign jtag_reg_addr_o = 6'b0; // jtag不用
+    assign jtag_reg_data_o = 32'b0; // jtag不用
+    assign m2_we_i = 1'b0; // jtag不用
+    assign m2_addr_i = 32'b0; // jtag不用
+    assign m2_data_i = 32'b0; // jtag不用
+    assign m2_req_i = 1'b0; // jtag不用
+    assign jtag_halt_req_o = 1'b0; // jtag不用
+    assign jtag_reset_req_o = 1'b0; // jtag不用
 
 endmodule

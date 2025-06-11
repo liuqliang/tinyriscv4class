@@ -87,6 +87,18 @@ module rib(
     input wire[`MemBus] s5_data_i,         // 从设备5读取到的数据
     output reg s5_we_o,                    // 从设备5写标志
 
+    // slave 6 interface
+    output reg[`MemAddrBus] s6_addr_o,
+    output reg[`MemBus] s6_data_o,
+    input wire[`MemBus] s6_data_i,
+    output reg s6_we_o,
+
+    // slave 7 interface
+    output reg[`MemAddrBus] s7_addr_o,
+    output reg[`MemBus] s7_data_o,
+    input wire[`MemBus] s7_data_i,
+    output reg s7_we_o,
+    
     output reg hold_flag_o                 // 暂停流水线标志
 
     );
@@ -100,6 +112,8 @@ module rib(
     parameter [3:0]slave_3 = 4'b0011;
     parameter [3:0]slave_4 = 4'b0100;
     parameter [3:0]slave_5 = 4'b0101;
+    parameter [3:0]slave_6 = 4'b0110;
+    parameter [3:0]slave_7 = 4'b0111;
 
     parameter [1:0]grant0 = 2'h0;
     parameter [1:0]grant1 = 2'h1;
@@ -115,7 +129,7 @@ module rib(
 
     // 仲裁逻辑
     // 固定优先级仲裁机制
-    // 优先级由高到低：主设备3，主设备0，主设备2，主设备1
+    // 优先级由高到低：主设备3uart，主设备0ex，主设备2jtag，主设备1pc
     always @ (*) begin
         if (req[3]) begin
             grant = grant3;
@@ -145,18 +159,24 @@ module rib(
         s3_addr_o = `ZeroWord;
         s4_addr_o = `ZeroWord;
         s5_addr_o = `ZeroWord;
+        s6_addr_o = `ZeroWord;
+        s7_addr_o = `ZeroWord;
         s0_data_o = `ZeroWord;
         s1_data_o = `ZeroWord;
         s2_data_o = `ZeroWord;
         s3_data_o = `ZeroWord;
         s4_data_o = `ZeroWord;
         s5_data_o = `ZeroWord;
+        s6_data_o = `ZeroWord;
+        s7_data_o = `ZeroWord;
         s0_we_o = `WriteDisable;
         s1_we_o = `WriteDisable;
         s2_we_o = `WriteDisable;
         s3_we_o = `WriteDisable;
         s4_we_o = `WriteDisable;
         s5_we_o = `WriteDisable;
+        s6_we_o = `WriteDisable;
+        s7_we_o = `WriteDisable;
 
         case (grant)
             grant0: begin
@@ -196,6 +216,18 @@ module rib(
                         s5_addr_o = {{4'h0}, {m0_addr_i[27:0]}};
                         s5_data_o = m0_data_i;
                         m0_data_o = s5_data_i;
+                    end
+                    slave_6: begin
+                        s6_we_o = m0_we_i;
+                        s6_addr_o = {{4'h0}, {m0_addr_i[27:0]}};
+                        s6_data_o = m0_data_i;
+                        m0_data_o = s6_data_i;
+                    end
+                    slave_7: begin
+                        s7_we_o = m0_we_i;
+                        s7_addr_o = {{4'h0}, {m0_addr_i[27:0]}};
+                        s7_data_o = m0_data_i;
+                        m0_data_o = s7_data_i;
                     end
                     default: begin
 
@@ -240,6 +272,18 @@ module rib(
                         s5_data_o = m1_data_i;
                         m1_data_o = s5_data_i;
                     end
+                    slave_6: begin
+                        s6_we_o = m1_we_i;
+                        s6_addr_o = {{4'h0}, {m1_addr_i[27:0]}};
+                        s6_data_o = m1_data_i;
+                        m1_data_o = s6_data_i;
+                    end
+                    slave_7: begin
+                        s7_we_o = m1_we_i;
+                        s7_addr_o = {{4'h0}, {m1_addr_i[27:0]}};
+                        s7_data_o = m1_data_i;
+                        m1_data_o = s7_data_i;
+                    end
                     default: begin
 
                     end
@@ -283,6 +327,18 @@ module rib(
                         s5_data_o = m2_data_i;
                         m2_data_o = s5_data_i;
                     end
+                    slave_6: begin
+                        s6_we_o = m2_we_i;
+                        s6_addr_o = {{4'h0}, {m2_addr_i[27:0]}};
+                        s6_data_o = m2_data_i;
+                        m2_data_o = s6_data_i;
+                    end
+                    slave_7: begin
+                        s7_we_o = m2_we_i;
+                        s7_addr_o = {{4'h0}, {m2_addr_i[27:0]}};
+                        s7_data_o = m2_data_i;
+                        m2_data_o = s7_data_i;
+                    end
                     default: begin
 
                     end
@@ -325,6 +381,18 @@ module rib(
                         s5_addr_o = {{4'h0}, {m3_addr_i[27:0]}};
                         s5_data_o = m3_data_i;
                         m3_data_o = s5_data_i;
+                    end
+                    slave_6: begin
+                        s6_we_o = m3_we_i;
+                        s6_addr_o = {{4'h0}, {m3_addr_i[27:0]}};
+                        s6_data_o = m3_data_i;
+                        m3_data_o = s6_data_i;
+                    end
+                    slave_7: begin
+                        s7_we_o = m3_we_i;
+                        s7_addr_o = {{4'h0}, {m3_addr_i[27:0]}};
+                        s7_data_o = m3_data_i;
+                        m3_data_o = s7_data_i;
                     end
                     default: begin
 

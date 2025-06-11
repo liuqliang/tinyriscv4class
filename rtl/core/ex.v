@@ -17,66 +17,68 @@
 `include "defines.v"
 
 // 执行模块
-// 纯组合逻辑电路
+// 纯组合�?�辑电路
 module ex(
-
+    input wire clk,
     input wire rst,
 
     // from id
     input wire[`InstBus] inst_i,            // 指令内容
     input wire[`InstAddrBus] inst_addr_i,   // 指令地址
-    input wire reg_we_i,                    // 是否写通用寄存器
-    input wire[`RegAddrBus] reg_waddr_i,    // 写通用寄存器地址
-    input wire[`RegBus] reg1_rdata_i,       // 通用寄存器1输入数据
-    input wire[`RegBus] reg2_rdata_i,       // 通用寄存器2输入数据
-    input wire csr_we_i,                    // 是否写CSR寄存器
-    input wire[`MemAddrBus] csr_waddr_i,    // 写CSR寄存器地址
-    input wire[`RegBus] csr_rdata_i,        // CSR寄存器输入数据
+    input wire reg_we_i,                    // 是否写�?�用寄存�?
+    input wire[`RegAddrBus] reg_waddr_i,    // 写�?�用寄存器地�?
+    input wire[`RegBus] reg1_rdata_i,       // 通用寄存�?1输入数据
+    input wire[`RegBus] reg2_rdata_i,       // 通用寄存�?2输入数据
+    input wire csr_we_i,                    // 是否写CSR寄存�?
+    input wire[`MemAddrBus] csr_waddr_i,    // 写CSR寄存器地�?
+    input wire[`RegBus] csr_rdata_i,        // CSR寄存器输入数�?
     input wire int_assert_i,                // 中断发生标志
     input wire[`InstAddrBus] int_addr_i,    // 中断跳转地址
     input wire[`MemAddrBus] op1_i,
     input wire[`MemAddrBus] op2_i,
+    input wire[`MemAddrBus] op3_i,
     input wire[`MemAddrBus] op1_jump_i,
     input wire[`MemAddrBus] op2_jump_i,
 
     // from mem
     input wire[`MemBus] mem_rdata_i,        // 内存输入数据
+    input wire          uart_SID_compl,    // UARTID发�?�完成标�?
+    input wire          i2c_compl,        // I2C读取完成标志
 
     // from div
     input wire div_ready_i,                 // 除法运算完成标志
     input wire[`RegBus] div_result_i,       // 除法运算结果
-    input wire div_busy_i,                  // 除法运算忙标志
-    input wire[`RegAddrBus] div_reg_waddr_i,// 除法运算结束后要写的寄存器地址
+    input wire div_busy_i,                  // 除法运算忙标�?
+    input wire[`RegAddrBus] div_reg_waddr_i,// 除法运算结束后要写的寄存器地�?
 
     // to mem
-    output reg[`MemBus] mem_wdata_o,        // 写内存数据
-    output reg[`MemAddrBus] mem_raddr_o,    // 读内存地址
-    output reg[`MemAddrBus] mem_waddr_o,    // 写内存地址
+    output reg[`MemBus] mem_wdata_o,        // 写内存数�?
+    output reg[`MemAddrBus] mem_raddr_o,    // 读内存地�?
+    output reg[`MemAddrBus] mem_waddr_o,    // 写内存地�?
     output wire mem_we_o,                   // 是否要写内存
     output wire mem_req_o,                  // 请求访问内存标志
 
     // to regs
     output wire[`RegBus] reg_wdata_o,       // 写寄存器数据
-    output wire reg_we_o,                   // 是否要写通用寄存器
-    output wire[`RegAddrBus] reg_waddr_o,   // 写通用寄存器地址
+    output wire reg_we_o,                   // 是否要写通用寄存�?
+    output wire[`RegAddrBus] reg_waddr_o,   // 写�?�用寄存器地�?
 
     // to csr reg
-    output reg[`RegBus] csr_wdata_o,        // 写CSR寄存器数据
-    output wire csr_we_o,                   // 是否要写CSR寄存器
-    output wire[`MemAddrBus] csr_waddr_o,   // 写CSR寄存器地址
+    output reg[`RegBus] csr_wdata_o,        // 写CSR寄存器数�?
+    output wire csr_we_o,                   // 是否要写CSR寄存�?
+    output wire[`MemAddrBus] csr_waddr_o,   // 写CSR寄存器地�?
 
     // to div
-    output wire div_start_o,                // 开始除法运算标志
-    output reg[`RegBus] div_dividend_o,     // 被除数
+    output wire div_start_o,                // �?始除法运算标�?
+    output reg[`RegBus] div_dividend_o,     // 被除�?
     output reg[`RegBus] div_divisor_o,      // 除数
-    output reg[2:0] div_op_o,               // 具体是哪一条除法指令
-    output reg[`RegAddrBus] div_reg_waddr_o,// 除法运算结束后要写的寄存器地址
+    output reg[2:0] div_op_o,               // 具体是哪�?条除法指�?
+    output reg[`RegAddrBus] div_reg_waddr_o,// 除法运算结束后要写的寄存器地�?
 
     // to ctrl
     output wire hold_flag_o,                // 是否暂停标志
     output wire jump_flag_o,                // 是否跳转标志
     output wire[`InstAddrBus] jump_addr_o   // 跳转目的地址
-
     );
 
     wire[1:0] mem_raddr_index;
@@ -88,6 +90,7 @@ module ex(
     wire[31:0] sr_shift_mask;
     wire[31:0] sri_shift_mask;
     wire[31:0] op1_add_op2_res;
+    wire[31:0] op1_add_op3_res;
     wire[31:0] op1_jump_add_op2_jump_res;
     wire[31:0] reg1_data_invert;
     wire[31:0] reg2_data_invert;
@@ -116,6 +119,28 @@ module ex(
     reg mem_we;
     reg mem_req;
     reg div_start;
+    reg uart_busy_next;
+    reg uart_busy_current;
+    reg [1:0]   RT_state;
+    reg [1:0]   RT_state_next;
+    reg[`RegAddrBus] RT_reg_waddr;
+    reg[`InstAddrBus] RT_jump_addr;
+
+
+    always @(posedge clk) begin
+        if (~rst) begin
+            uart_busy_current <= 1'b0;
+            RT_state <= 2'b00;
+            RT_reg_waddr <= 5'b0;
+            RT_jump_addr <= `ZeroWord;
+        end
+        else begin
+            uart_busy_current <= uart_busy_current?(~uart_SID_compl):uart_busy_next;
+            RT_state <= RT_state_next;
+            RT_reg_waddr <= opcode==`INST_EXT&funct3==`INST_RT?reg_waddr_i:RT_reg_waddr;
+            RT_jump_addr <= opcode==`INST_EXT&funct3==`INST_RT?inst_addr_i+32'd4:RT_jump_addr;
+        end
+    end
 
     assign opcode = inst_i[6:0];
     assign funct3 = inst_i[14:12];
@@ -129,6 +154,7 @@ module ex(
     assign sri_shift_mask = 32'hffffffff >> inst_i[24:20];
 
     assign op1_add_op2_res = op1_i + op2_i;
+    assign op1_add_op3_res = op1_i + op3_i;
     assign op1_jump_add_op2_jump_res = op1_jump_i + op2_jump_i;
 
     assign reg1_data_invert = ~reg1_rdata_i + 1;
@@ -149,21 +175,21 @@ module ex(
     assign div_start_o = (int_assert_i == `INT_ASSERT)? `DivStop: div_start;
 
     assign reg_wdata_o = reg_wdata | div_wdata;
-    // 响应中断时不写通用寄存器
+    // 响应中断时不写�?�用寄存�?
     assign reg_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: (reg_we || div_we);
     assign reg_waddr_o = reg_waddr | div_waddr;
 
-    // 响应中断时不写内存
+    // 响应中断时不写内�?
     assign mem_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: mem_we;
 
-    // 响应中断时不向总线请求访问内存
+    // 响应中断时不向�?�线请求访问内存
     assign mem_req_o = (int_assert_i == `INT_ASSERT)? `RIB_NREQ: mem_req;
 
     assign hold_flag_o = hold_flag || div_hold_flag;
     assign jump_flag_o = jump_flag || div_jump_flag || ((int_assert_i == `INT_ASSERT)? `JumpEnable: `JumpDisable);
     assign jump_addr_o = (int_assert_i == `INT_ASSERT)? int_addr_i: (jump_addr | div_jump_addr);
 
-    // 响应中断时不写CSR寄存器
+    // 响应中断时不写CSR寄存�?
     assign csr_we_o = (int_assert_i == `INT_ASSERT)? `WriteDisable: csr_we_i;
     assign csr_waddr_o = csr_waddr_i;
 
@@ -250,8 +276,10 @@ module ex(
         reg_waddr = reg_waddr_i;
         mem_req = `RIB_NREQ;
         csr_wdata_o = `ZeroWord;
-
-        case (opcode)
+        uart_busy_next = 1'b0;
+        RT_state_next = 2'b00;
+        if (RT_state==2'b0) begin
+            case (opcode)
             `INST_TYPE_I: begin
                 case (funct3)
                     `INST_ADDI: begin
@@ -640,7 +668,7 @@ module ex(
                 case (funct3)
                     `INST_SB: begin
                         jump_flag = `JumpDisable;
-                        hold_flag = `HoldDisable;
+                        hold_flag = (uart_busy_current & mem_waddr_o[31:28]==4'h3)?`HoldEnable:`HoldDisable;
                         jump_addr = `ZeroWord;
                         reg_wdata = `ZeroWord;
                         mem_we = `WriteEnable;
@@ -664,7 +692,7 @@ module ex(
                     end
                     `INST_SH: begin
                         jump_flag = `JumpDisable;
-                        hold_flag = `HoldDisable;
+                        hold_flag = (uart_busy_current & mem_waddr_o[31:28]==4'h3)?`HoldEnable:`HoldDisable;
                         jump_addr = `ZeroWord;
                         reg_wdata = `ZeroWord;
                         mem_we = `WriteEnable;
@@ -679,7 +707,7 @@ module ex(
                     end
                     `INST_SW: begin
                         jump_flag = `JumpDisable;
-                        hold_flag = `HoldDisable;
+                        hold_flag = (uart_busy_current & mem_waddr_o[31:28]==4'h3)?`HoldEnable:`HoldDisable;
                         jump_addr = `ZeroWord;
                         reg_wdata = `ZeroWord;
                         mem_we = `WriteEnable;
@@ -859,6 +887,79 @@ module ex(
                     end
                 endcase
             end
+            `INST_EXT :begin
+                case (funct3)
+                    `INST_IF: begin
+                        if(inst_i[31:20]==12'b0) begin
+                            if(op1_ge_op2_signed) begin
+                                jump_flag = `JumpDisable;
+                                hold_flag = `HoldDisable;
+                                jump_addr = `ZeroWord;
+                                mem_wdata_o = op1_i;
+                                mem_raddr_o = `ZeroWord;
+                                mem_waddr_o = 32'h3000000c;//todo
+                                mem_we = `WriteEnable;
+                                reg_wdata = 32'b0;
+                                mem_req = `RIB_REQ;
+                            end
+                            else begin
+                                jump_flag = `JumpDisable;
+                                hold_flag = `HoldDisable;
+                                jump_addr = `ZeroWord;
+                                mem_wdata_o = `ZeroWord;
+                                mem_raddr_o = `ZeroWord;
+                                mem_waddr_o = `ZeroWord;
+                                mem_we = `WriteDisable;
+                                reg_wdata = op1_i;
+                            end
+                        end
+                        else begin
+                            jump_flag = `JumpDisable;
+                            hold_flag = `HoldDisable;
+                            jump_addr = `ZeroWord;
+                            mem_wdata_o = `ZeroWord;
+                            mem_raddr_o = `ZeroWord;
+                            mem_waddr_o = `ZeroWord;
+                            mem_we = `WriteDisable;
+                            reg_wdata = op1_add_op3_res;
+                        end
+                    end
+                    `INST_SID: begin
+                        uart_busy_next = 1'b1;
+                        jump_flag = `JumpDisable;
+                        hold_flag = `HoldDisable;
+                        jump_addr = `ZeroWord;
+                        mem_wdata_o = `ZeroWord;
+                        mem_raddr_o = 32'h30000014;
+                        mem_waddr_o = 32'h30000014;
+                        mem_we = `WriteEnable;
+                        reg_wdata = `ZeroWord;
+                        mem_req = `RIB_REQ;
+                    end
+                    `INST_RT: begin
+                        jump_flag = `JumpDisable;
+                        hold_flag = `HoldEnable;
+                        jump_addr = `ZeroWord;
+                        mem_wdata_o = 32'h70000548;
+                        mem_raddr_o = 32'h70010000;
+                        mem_waddr_o = 32'h70010000;
+                        mem_we = `WriteEnable;
+                        reg_wdata = `ZeroWord;
+                        mem_req = `RIB_REQ;
+                        RT_state_next = 2'b01;
+                    end
+                    default: begin
+                        jump_flag = `JumpDisable;
+                        hold_flag = `HoldDisable;
+                        jump_addr = `ZeroWord;
+                        mem_wdata_o = `ZeroWord;
+                        mem_raddr_o = `ZeroWord;
+                        mem_waddr_o = `ZeroWord;
+                        mem_we = `WriteDisable;
+                        reg_wdata = `ZeroWord;
+                    end
+                endcase
+            end
             default: begin
                 jump_flag = `JumpDisable;
                 hold_flag = `HoldDisable;
@@ -870,6 +971,46 @@ module ex(
                 reg_wdata = `ZeroWord;
             end
         endcase
+        end
+        else begin
+            case (RT_state)
+                2'b01: begin
+                    jump_flag = `JumpDisable;
+                    hold_flag = `HoldEnable;
+                    jump_addr = `ZeroWord;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = `ZeroWord;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = `ZeroWord;
+                    RT_state_next = i2c_compl?2'b10:2'b01;
+                end
+                2'b10: begin
+                    jump_flag = `JumpEnable;
+                    hold_flag = `HoldDisable;
+                    jump_addr = RT_jump_addr;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = 32'h70030000;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = mem_rdata_i;
+                    reg_we = `WriteEnable;
+                    reg_waddr = RT_reg_waddr;
+                    mem_req = `RIB_REQ;
+                    RT_state_next = 2'b00;
+                end
+                default: begin
+                    jump_flag = `JumpDisable;
+                    hold_flag = `HoldEnable;
+                    jump_addr = `ZeroWord;
+                    mem_wdata_o = `ZeroWord;
+                    mem_raddr_o = `ZeroWord;
+                    mem_waddr_o = `ZeroWord;
+                    mem_we = `WriteDisable;
+                    reg_wdata = `ZeroWord;
+                end
+            endcase
+        end    
     end
 
 endmodule
