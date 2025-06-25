@@ -22,35 +22,32 @@ module tinyriscv_soc_top(
     input wire clk,
     input wire rst,
 
-    //output reg over,         // 测试是否完成信号
+    output reg over,         // 测试是否完成信号
     output reg succ,         // 测试是否成功信号
 
-    //output wire halted_ind,  // jtag是否已经halt住CPU信号
+    output wire halted_ind,  // jtag是否已经halt住CPU信号
 
     input wire uart_debug_pin, // 串口下载使能引脚
 
-    output wire uart_tx_pin, // UART发�?�引�?
+    output wire uart_tx_pin, // UART发�?�引�?
     input wire uart_rx_pin,  // UART接收引脚
     inout wire[15:0] gpio,    // GPIO引脚
 
-    //input wire jtag_TCK,     // JTAG TCK引脚
-    //input wire jtag_TMS,     // JTAG TMS引脚
-    //input wire jtag_TDI,     // JTAG TDI引脚
-    //output wire jtag_TDO,    // JTAG TDO引脚
+    input wire jtag_TCK,     // JTAG TCK引脚
+    input wire jtag_TMS,     // JTAG TMS引脚
+    input wire jtag_TDI,     // JTAG TDI引脚
+    output wire jtag_TDO,    // JTAG TDO引脚
 
-    //input wire spi_miso,     // SPI MISO引脚
-    //output wire spi_mosi,    // SPI MOSI引脚
-    //output wire spi_ss,      // SPI SS引脚
-    //output wire spi_clk,      // SPI CLK引脚
+    input wire spi_miso,     // SPI MISO引脚
+    output wire spi_mosi,    // SPI MOSI引脚
+    output wire spi_ss,      // SPI SS引脚
+    output wire spi_clk,      // SPI CLK引脚
 
-    output wire [2:0]   pwm_out,     // PWM输出引脚
+    output wire [3:0]   pwm_out,     // PWM输出引脚
     output wire i2c_scl,      // I2C SCL引脚
     inout wire i2c_sda    // I2C SDA引脚
 
     );
-    reg over;
-    wire halted_ind;
-    wire pwm_out4; // PWM输出引脚
 
     // master 0 interface
     wire[`MemAddrBus] m0_addr_i;
@@ -308,7 +305,7 @@ module tinyriscv_soc_top(
     );
 
     // spi模块例化
-    /*
+    
     spi spi_0(
         .clk(clk),
         .rst(rst),
@@ -321,8 +318,7 @@ module tinyriscv_soc_top(
         .spi_ss(spi_ss),
         .spi_clk(spi_clk)
     );
-    */
-    assign s5_data_i = 32'b0; // spi不用
+    
 
     // pwm模块例化
     PWM pwm_0(
@@ -331,12 +327,12 @@ module tinyriscv_soc_top(
         .we_i(s6_we_o),
         .write_addr(s6_addr_o),
         .write_data(s6_data_o),
-        .pwm_out({pwm_out4,pwm_out})
+        .pwm_out({pwm_out})
     );
 
     //i2c io
     assign i2c_sda_i = i2c_sda;
-    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻�?
+    assign i2c_sda = i2c_sda_o; // I2C SDA线为高阻�?
 
     //I2C模块例化
     I2C i2c_0(
@@ -449,7 +445,7 @@ module tinyriscv_soc_top(
     );
 
     // jtag模块例化
-    /*
+    
     jtag_top #(
         .DMI_ADDR_BITS(6),
         .DMI_DATA_BITS(32),
@@ -473,15 +469,5 @@ module tinyriscv_soc_top(
         .halt_req_o(jtag_halt_req_o),
         .reset_req_o(jtag_reset_req_o)
     );
-    */
-    assign jtag_reg_we_o = 1'b0; // jtag不用
-    assign jtag_reg_addr_o = 6'b0; // jtag不用
-    assign jtag_reg_data_o = 32'b0; // jtag不用
-    assign m2_we_i = 1'b0; // jtag不用
-    assign m2_addr_i = 32'b0; // jtag不用
-    assign m2_data_i = 32'b0; // jtag不用
-    assign m2_req_i = 1'b0; // jtag不用
-    assign jtag_halt_req_o = 1'b0; // jtag不用
-    assign jtag_reset_req_o = 1'b0; // jtag不用
 
 endmodule

@@ -164,9 +164,15 @@ module I2C (
             end
             i2c_addr_ack: begin
                 i2c_sda_o = 1'bz;
-                if (i2c_div_cnt == 8'd208 & i2c_sda_in_temp == 1'b0 &i2c_sda_i==1'b0) begin
-                    i2c_state_next = i2c_operation? i2c_read :i2c_write;
-                    i2c_transfer_cnt_next = 4'd9;
+                if (i2c_div_cnt == 8'd208) begin
+                    if (i2c_sda_in_temp == 1'b0 &i2c_sda_i==1'b0) begin
+                        i2c_state_next = i2c_operation? i2c_read :i2c_write;
+                        i2c_transfer_cnt_next = 4'd9;
+                    end
+                    else begin
+                        i2c_state_next = i2c_idle; // address not match, return to idle state.
+                        i2c_transfer_cnt_next = 4'b0; 
+                    end
                 end
                 else begin
                     i2c_state_next = i2c_addr_ack;
@@ -222,9 +228,15 @@ module I2C (
             end
             i2c_write_ack: begin
                 i2c_sda_o = 1'bz;
-                if (i2c_div_cnt == 8'd208 & i2c_sda_in_temp == 1'b0 & i2c_sda_i==1'b0) begin
-                    i2c_state_next = (i2c_byte_cnt==3'b0)? i2c_stop : i2c_write;
-                    i2c_transfer_cnt_next = 4'd9;
+                if (i2c_div_cnt == 8'd208) begin
+                    if (i2c_sda_in_temp == 1'b0 & i2c_sda_i==1'b0) begin
+                        i2c_state_next = (i2c_byte_cnt==3'b0)? i2c_stop : i2c_write;
+                        i2c_transfer_cnt_next = 4'd9;
+                    end
+                    else begin
+                        i2c_state_next = i2c_idle; // ack not received, return to idle state.
+                        i2c_transfer_cnt_next = 4'b0; 
+                    end
                 end
                 else begin
                     i2c_state_next = i2c_write_ack;
