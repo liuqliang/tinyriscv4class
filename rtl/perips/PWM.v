@@ -1,5 +1,4 @@
 //PWM模块
-`include "defines.v"
 module PWM (
     input   clk,
     input   rst,
@@ -16,16 +15,16 @@ module PWM (
     wire    [31:0]  counter0_next, counter1_next, counter2_next, counter3_next; 
     
     always @(posedge clk) begin
-        if (rst == `RstEnable ) begin
-            A0 <= `ZeroWord;
-            A1 <= `ZeroWord;
-            A2 <= `ZeroWord;
-            A3 <= `ZeroWord;
-            B0 <= `ZeroWord;
-            B1 <= `ZeroWord;
-            B2 <= `ZeroWord;
-            B3 <= `ZeroWord;
-            C <= `ZeroWord;
+        if (~rst) begin
+            A0 <= 32'b0;
+            A1 <= 32'b0;
+            A2 <= 32'b0;
+            A3 <= 32'b0;
+            B0 <= 32'b0;
+            B1 <= 32'b0;
+            B2 <= 32'b0;
+            B3 <= 32'b0;
+            C <= 32'b0;
         end 
         else if (we_i) begin
             A0 <= (write_addr == 32'h00000000)?write_data:A0;
